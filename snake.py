@@ -1,4 +1,5 @@
 import msvcrt
+import os
 import random
 import shutil
 import sys
@@ -12,6 +13,33 @@ up_one: str = "\033[A"
 type Cell = offset | Literal[1, 0]
 type Row = list[Cell]
 type Offset = Literal[-1, 0, 1]
+
+
+class BoardDetails(NamedTuple):
+    terminal_width: int
+    terminal_height: int
+
+    board_height: int
+    board_width: int
+
+    left_start: int
+    right_last: int
+
+    top_start: int
+    bottom_last: int
+
+    margin: int
+
+
+class ANSICodes(StrEnum):
+    HIDE_CURSOR = "\033[?25l"
+    SHOW_CURSOR = "\033[?25h"
+    CLEAR_SCREEN = "\033[2J"
+    CLEAR_SCREEN_N3 = "\033[3J"
+    MOVE_CURSOR = "\033[{y};{x}H"
+
+    CYAN_BG = "\033[46m"
+    RESET_COL = "\033[0m"
 
 
 class offset(NamedTuple):
@@ -41,25 +69,6 @@ class coord(NamedTuple):
 
     def __repr__(self) -> str:
         return f"c(y={self.y_index}, x={self.x_index})"
-
-
-class BoardDetails(NamedTuple):
-    board_height: int
-    board_width: int
-
-    left_start: int
-    right_last: int
-
-    top_start: int
-    bottom_last: int
-
-
-class ANSICodes(StrEnum):
-    HIDE_CURSOR = "\033[?25l"
-    SHOW_CURSOR = "\033[?25h"
-    CLEAR_SCREEN = "\033[2J"
-    CLEAR_SCREEN_N3 = "\033[3J"
-    MOVE_CURSOR = "\033[{y};{x}H"
 
 
 class Dead(Exception):
@@ -139,12 +148,15 @@ class Board:
         bottom_last = height - margin
 
         return BoardDetails(
+            terminal_width=width,
+            terminal_height=height,
             board_height=board_height,
             board_width=board_width // 2,
             left_start=left_start,
             right_last=right_last,
             top_start=top_start,
             bottom_last=bottom_last,
+            margin=margin,
         )
 
     def __init__(self, details: BoardDetails) -> None:
@@ -171,6 +183,44 @@ class Board:
     @property
     def points(self) -> int:
         return self.__points
+
+    def __clean_board_and_print(self) -> None:
+        os.system(("cls" if os.name == "nt" else "clear"))
+        print(
+            ANSICodes.MOVE_CURSOR.format(y=1, x=1),
+            end="",
+            flush=True,
+        )
+
+        internal_space: int = self.__details.right_last - self.__details.left_start + 1
+        border_chunk: str = ANSICodes.CYAN_BG + "  " + ANSICodes.RESET_COL
+
+        horizontal_margins = (
+            " " * (self.__details.left_start - 3)
+            + ANSICodes.CYAN_BG
+            + " " * (internal_space + 4)
+            + ANSICodes.RESET_COL
+        )
+        vertical_margins = (
+            " " * (self.__details.left_start - 3)
+            + border_chunk
+            + " " * internal_space
+            + border_chunk
+        )
+
+        clean_rows: list[str] = []
+
+        clean_rows.extend("" for _ in range(self.__details.margin - 1))
+        clean_rows.append(horizontal_margins)
+
+        clean_rows.extend(
+            vertical_margins
+            for _ in range(self.__details.top_start, self.__details.bottom_last + 1)
+        )
+
+        clean_rows.append(horizontal_margins)
+
+        print("\n".join(clean_rows), end="", flush=True)
 
     def __init_board(self) -> None:
         self.__board[coord(0, 0)] = offset(0, 1)
@@ -254,12 +304,12 @@ class Board:
 
         update_str: str = (
             ANSICodes.MOVE_CURSOR.format(
-                y=self.__details.top_start - 1,
+                y=self.__details.top_start - self.__details.margin,
                 x=self.__details.left_start,
             )
             + f"Score: {self.__points}"
             + ANSICodes.MOVE_CURSOR.format(
-                y=self.__details.top_start - 1,
+                y=self.__details.top_start - self.__details.margin,
                 x=self.__details.right_last - len(moves_str) + 1,
             )
             + moves_str
@@ -343,6 +393,7 @@ class Board:
             return None
 
     def start(self) -> None:
+        self.__clean_board_and_print()
         self.__spawn_food()
         self.__print_board()
 
@@ -398,9 +449,8 @@ def _do_test() -> None:
 
 
 def main(*args: str) -> int:
-    print(ANSICodes.CLEAR_SCREEN_N3, end="", flush=True)
 
-    details = Board.create_board_details(1)
+    details = Board.create_board_details(2)
     board = Board(details)
 
     board.start()
