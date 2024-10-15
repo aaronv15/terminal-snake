@@ -251,7 +251,7 @@ class Board:
         #     + "!@#$%^&*"
         # )
 
-        apple: str = "██"
+        apple: str = "()"
         empty: str = "  "
         body: str = "░░"
 
