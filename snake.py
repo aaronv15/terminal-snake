@@ -120,7 +120,7 @@ class _EndChars:
 
 class Board:
     @classmethod
-    def create_details(cls, margin: int) -> BoardDetails:
+    def create_board_details(cls, margin: int) -> BoardDetails:
         term_size = shutil.get_terminal_size()
 
         height = term_size.lines
@@ -419,7 +419,7 @@ def _do_test() -> None:
 def main(*args: str) -> int:
     print(ANSICodes.CLEAR_SCREEN_N3, end="", flush=True)
 
-    details = Board.create_details(2)
+    details = Board.create_board_details(2)
     board = Board(details)
 
     board.start()
