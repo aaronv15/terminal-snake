@@ -419,7 +419,7 @@ def _do_test() -> None:
 def main(*args: str) -> int:
     print(ANSICodes.CLEAR_SCREEN_N3, end="", flush=True)
 
-    details = Board.create_details(2)
+    details = Board.create_details(1)
     board = Board(details)
 
     board.start()
@@ -443,7 +443,7 @@ if __name__ == "__main__":
 
         main(*sys.argv)
     finally:
-        print(ANSICodes.SHOW_CURSOR)
+        print(ANSICodes.SHOW_CURSOR, end="")
     # try:
     #     main(*sys.argv)
     # except Exception as ex:
