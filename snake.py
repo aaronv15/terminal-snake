@@ -120,7 +120,7 @@ class _EndChars:
 
 class Board:
     @classmethod
-    def create_details(cls, margin: int) -> BoardDetails:
+    def create_board_details(cls, margin: int) -> BoardDetails:
         term_size = shutil.get_terminal_size()
 
         height = term_size.lines
@@ -148,9 +148,6 @@ class Board:
         )
 
     def __init__(self, details: BoardDetails) -> None:
-        # self.__debug_file = Path(__file__).parent.joinpath("dprint.txt")
-        # self.__c_d_file()
-
         self.__dir: offset = offset(0, 1)
 
         self.__details: BoardDetails = details
@@ -170,14 +167,6 @@ class Board:
         self.__char_buffer: list[bytes] = []
 
         self.__init_board()
-
-    # def __c_d_file(self) -> None:
-    #     with open(self.__debug_file, "w") as file:
-    #         print(end="", file=file)
-
-    # def __fprint(self, *args: object, sep: str = " ", end: str = "\n") -> None:
-    #     with open(self.__debug_file, "a") as file:
-    #         print(*args, sep=sep, end=end, file=file)
 
     @property
     def points(self) -> int:
@@ -242,7 +231,7 @@ class Board:
         self.__board[self.__index_tail] = 0
         self.__index_tail += tail_offset
 
-    def __print_board(self, half_update: bool) -> None:
+    def __print_board(self) -> None:
         # "░░" or "██"
         # body: str = (
         #     "abcdefghijklmnopqrstuvwxyz"
@@ -286,11 +275,8 @@ class Board:
             + tail
         )
 
-        # restore_update_cells: set[coord] = set()
         while self.__update_cells:
             co = self.__update_cells.pop()
-
-            # restore_update_cells.add(co) if half_update else None
 
             cell: Cell = self.__board[co]
             display_value: str
@@ -309,9 +295,6 @@ class Board:
                 )
                 + display_value
             )
-
-        # if half_update:
-        #     self.__update_cells = restore_update_cells
 
         print(update_str + ANSICodes.HIDE_CURSOR, end="", flush=True)
 
@@ -361,16 +344,14 @@ class Board:
 
     def start(self) -> None:
         self.__spawn_food()
-        self.__print_board(False)
+        self.__print_board()
 
     def update(self, update_rate: float) -> None:
         self.__read_input()
         self.__parse_input()
         self.__update()
-        self.__print_board(True)
-        time.sleep(update_rate / 2)
-        self.__print_board(False)
-        time.sleep(update_rate / 2)
+        self.__print_board()
+        time.sleep(update_rate)
 
 
 def _run_loop(board: Board) -> None:
@@ -419,7 +400,7 @@ def _do_test() -> None:
 def main(*args: str) -> int:
     print(ANSICodes.CLEAR_SCREEN_N3, end="", flush=True)
 
-    details = Board.create_details(1)
+    details = Board.create_board_details(1)
     board = Board(details)
 
     board.start()
